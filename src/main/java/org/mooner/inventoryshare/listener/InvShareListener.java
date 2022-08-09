@@ -64,13 +64,33 @@ public class InvShareListener implements Listener {
             InventoryShare.plugin.getLogger().info("Took: " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
 
+            PotionEffectEntity potion;
+            try {
+                PotionEffectEntity entity = ShareDB.init.getPotion(id);
+                InventoryShare.plugin.getLogger().info("PotionEffectEntity");
+                if(entity != null) {
+                    InventoryShare.plugin.getLogger().info("Loaded");
+                    Bukkit.getScheduler().runTask(InventoryShare.plugin, () -> {
+                        for (PotionEffect effect : p.getActivePotionEffects()) p.removePotionEffect(effect.getType());
+                        entity.forEach(p::addPotionEffect);
+                    });
+                }
+                potion = entity;
+            } catch (RefreshError err) {
+                err.printStackTrace();
+                list.add("0x55");
+                potion = null;
+            }
+            InventoryShare.plugin.getLogger().info("Took: " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
+
             try {
                 final HealthEntity entity = ShareDB.init.getHealth(id);
                 InventoryShare.plugin.getLogger().info("HealthEntity");
                 if(entity != null) {
                     InventoryShare.plugin.getLogger().info("Loaded");
                     p.setHealth(entity.getHealth());
-                    p.setAbsorptionAmount(entity.getAbsorptionHealth());
+                    if(potion != null && potion.hasAbsorption()) p.setAbsorptionAmount(entity.getAbsorptionHealth());
                     p.setFoodLevel(entity.getHunger());
                 }
             } catch (RefreshError err) {
@@ -90,23 +110,6 @@ public class InvShareListener implements Listener {
             } catch (RefreshError err) {
                 err.printStackTrace();
                 list.add("0x46");
-            }
-            InventoryShare.plugin.getLogger().info("Took: " + (System.currentTimeMillis() - start) + "ms");
-            start = System.currentTimeMillis();
-
-            try {
-                final PotionEffectEntity entity = ShareDB.init.getPotion(id);
-                InventoryShare.plugin.getLogger().info("PotionEffectEntity");
-                if(entity != null) {
-                    InventoryShare.plugin.getLogger().info("Loaded");
-                    Bukkit.getScheduler().runTask(InventoryShare.plugin, () -> {
-                        for (PotionEffect effect : p.getActivePotionEffects()) p.removePotionEffect(effect.getType());
-                        entity.forEach(p::addPotionEffect);
-                    });
-                }
-            } catch (RefreshError err) {
-                err.printStackTrace();
-                list.add("0x55");
             }
             InventoryShare.plugin.getLogger().info("Took: " + (System.currentTimeMillis() - start) + "ms");
 

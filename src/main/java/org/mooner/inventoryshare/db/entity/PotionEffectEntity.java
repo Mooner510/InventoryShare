@@ -1,6 +1,7 @@
 package org.mooner.inventoryshare.db.entity;
 
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Collections;
 import java.util.Set;
@@ -19,5 +20,10 @@ public class PotionEffectEntity {
 
     public void forEach(Consumer<PotionEffect> action) {
         set.forEach(action);
+    }
+
+    public boolean hasAbsorption() {
+        return set.stream()
+                .anyMatch(e -> e.getType() == PotionEffectType.ABSORPTION);
     }
 }
