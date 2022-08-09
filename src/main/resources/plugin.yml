@@ -1,0 +1,4 @@
+name: InventoryShare
+version: 1.0
+main: org.mooner.inventoryshare.InventoryShare
+api-version: 1.18
