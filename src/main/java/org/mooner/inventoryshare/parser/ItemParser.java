@@ -9,13 +9,46 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.Map;
 
 public class ItemParser {
-    public static Map<String, Object> itemToSerial(ItemStack item) {
+    public static byte[] itemToSerial(ItemStack item) {
         if(item == null || item.getType() == Material.AIR) return null;
-        return item.serialize();
+        return serialToString(item.serialize());
+    }
+
+    public static ItemStack itemFromSerial(byte[] data) {
+        if(data == null) return null;
+        return ItemStack.deserialize(stringToSerial(data));
+    }
+
+    public static byte[] serialToString(Map<String, Object> data) {
+        if(data == null) return null;
+        try (
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                BukkitObjectOutputStream os = new BukkitObjectOutputStream(stream);
+                ) {
+            os.writeObject(data);
+            return stream.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> stringToSerial(byte[] data) {
+        if(data == null) return null;
+        try (
+                ByteArrayInputStream stream = new ByteArrayInputStream(data);
+                BukkitObjectInputStream os = new BukkitObjectInputStream(stream);
+        ) {
+            return (Map<String, Object>) os.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private static Object transfer(String s) {
@@ -25,21 +58,16 @@ public class ItemParser {
         return s;
     }
 
-    public static ItemStack itemFromSerial(String data) {
-        if(data == null) return null;
-        Map<String, Object> map = new HashMap<>();
-        final String[] a = data.substring(1, data.length() - 1).split(", ");
-        for (String s : a) {
-            final String[] b = s.split("=");
-            map.put(b[0], transfer(b[1]));
-        }
-        return ItemStack.deserialize(map);
-    }
-
-    public static ItemStack itemFromSerial(Map<String, Object> data) {
-        if(data == null) return null;
-        return ItemStack.deserialize(data);
-    }
+//    public static ItemStack itemFromSerial(String data) {
+//        if(data == null) return null;
+//        Map<String, Object> map = new HashMap<>();
+//        final String[] a = data.substring(1, data.length() - 1).split(", ");
+//        for (String s : a) {
+//            final String[] b = s.split("=");
+//            map.put(b[0], transfer(b[1]));
+//        }
+//        return ItemStack.deserialize(map);
+//    }
 
     public static String itemToBase64(ItemStack item) {
         if(item == null || item.getType() == Material.AIR) return null;

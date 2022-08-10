@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.UUID;
 
 public class ShareDB {
@@ -226,11 +225,11 @@ public class ShareDB {
             ) {
                 if(r.next())
                     return new ArmorEntity(
-                            ItemParser.itemFromSerial(r.getString("helmet")),
-                            ItemParser.itemFromSerial(r.getString("chestplate")),
-                            ItemParser.itemFromSerial(r.getString("leggings")),
-                            ItemParser.itemFromSerial(r.getString("boots")),
-                            ItemParser.itemFromSerial(r.getString("shield"))
+                            ItemParser.itemFromSerial(r.getBytes("helmet")),
+                            ItemParser.itemFromSerial(r.getBytes("chestplate")),
+                            ItemParser.itemFromSerial(r.getBytes("leggings")),
+                            ItemParser.itemFromSerial(r.getBytes("boots")),
+                            ItemParser.itemFromSerial(r.getBytes("shield"))
                     );
                 return null;
             }
@@ -241,29 +240,29 @@ public class ShareDB {
 
     public void saveArmor(Player p) {
         final long id = getKey(p.getUniqueId());
-        final Map<String, Object> h = ItemParser.itemToSerial(p.getInventory().getHelmet());
-        final Map<String, Object> cp = ItemParser.itemToSerial(p.getInventory().getChestplate());
-        final Map<String, Object> leg = ItemParser.itemToSerial(p.getInventory().getLeggings());
-        final Map<String, Object> b = ItemParser.itemToSerial(p.getInventory().getBoots());
-        final Map<String, Object> off = ItemParser.itemToSerial(p.getInventory().getItemInOffHand());
+        final byte[] h = ItemParser.itemToSerial(p.getInventory().getHelmet());
+        final byte[] cp = ItemParser.itemToSerial(p.getInventory().getChestplate());
+        final byte[] leg = ItemParser.itemToSerial(p.getInventory().getLeggings());
+        final byte[] b = ItemParser.itemToSerial(p.getInventory().getBoots());
+        final byte[] off = ItemParser.itemToSerial(p.getInventory().getItemInOffHand());
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
                 PreparedStatement s2 = c.prepareStatement("UPDATE Armor SET helmet=?, chestplate=?, leggings=?, boots=?, shield=? WHERE id=?");
                 PreparedStatement s = c.prepareStatement("INSERT INTO Armor VALUES(?, ?, ?, ?, ?, ?)")
         ) {
-            s2.setObject(1, h);
-            s2.setObject(2, cp);
-            s2.setObject(3, leg);
-            s2.setObject(4, b);
-            s2.setObject(5, off);
+            s2.setBytes(1, h);
+            s2.setBytes(2, cp);
+            s2.setBytes(3, leg);
+            s2.setBytes(4, b);
+            s2.setBytes(5, off);
             s2.setLong(6, id);
             if(s2.executeUpdate() == 0) {
                 s.setLong(1, id);
-                s.setObject(2, h);
-                s.setObject(3, cp);
-                s.setObject(4, leg);
-                s.setObject(5, b);
-                s.setObject(6, off);
+                s.setBytes(2, h);
+                s.setBytes(3, cp);
+                s.setBytes(4, leg);
+                s.setBytes(5, b);
+                s.setBytes(6, off);
                 s.executeUpdate();
             }
             addAccess(id);
@@ -378,7 +377,7 @@ public class ShareDB {
                     ResultSet r = s.executeQuery()
             ) {
                 HashMap<Integer, ItemStack> map = new HashMap<>();
-                while(r.next()) map.put(r.getInt("slot"), ItemParser.itemFromSerial(r.getString("data")));
+                while(r.next()) map.put(r.getInt("slot"), ItemParser.itemFromSerial(r.getBytes("data")));
                 return map.isEmpty() ? null : new InventoryEntity(map);
             }
         } catch (SQLException e) {
@@ -393,19 +392,19 @@ public class ShareDB {
     }
 
     private void saveSlot(long id, int slot, ItemStack i) {
-        Map<String, Object> map = ItemParser.itemToSerial(i);
+        byte[] map = ItemParser.itemToSerial(i);
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
                 PreparedStatement s2 = c.prepareStatement("UPDATE Inventory SET data=? WHERE id=? and slot=?");
                 PreparedStatement s = c.prepareStatement("INSERT INTO Inventory VALUES(?, ?, ?)")
         ) {
-            s2.setObject(1, map);
+            s2.setBytes(1, map);
             s2.setLong(2, id);
             s2.setInt(3, slot);
             if(s2.executeUpdate() == 0) {
                 s.setLong(1, id);
                 s.setInt(2, slot);
-                s.setObject(3, map);
+                s.setBytes(3, map);
                 s.executeUpdate();
             }
         } catch (SQLException e) {

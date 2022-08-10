@@ -12,6 +12,9 @@ import org.bukkit.event.block.BlockMultiPlaceEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitTask;
 import org.mooner.inventoryshare.InventoryShare;
@@ -121,6 +124,21 @@ public class KeepBlocking {
                 if (e.getDamager() instanceof Player) return;
                 if (p.getUniqueId().equals(uuid)) e.setCancelled(true);
             }
+        }
+
+        @EventHandler(priority = EventPriority.HIGHEST)
+        public void onClick(InventoryClickEvent e) {
+            if (e.getWhoClicked().getUniqueId().equals(uuid)) e.setCancelled(true);
+        }
+
+        @EventHandler(priority = EventPriority.HIGHEST)
+        public void onClick(InventoryOpenEvent e) {
+            if (e.getPlayer().getUniqueId().equals(uuid)) e.setCancelled(true);
+        }
+
+        @EventHandler(priority = EventPriority.HIGHEST)
+        public void onClick(InventoryDragEvent e) {
+            if (e.getWhoClicked().getUniqueId().equals(uuid)) e.setCancelled(true);
         }
 
         @EventHandler(priority = EventPriority.HIGHEST)

@@ -91,6 +91,7 @@ public class InvShareListener implements Listener {
                     InventoryShare.plugin.getLogger().info("Loaded");
                     p.setHealth(entity.getHealth());
                     if(potion != null && potion.hasAbsorption()) p.setAbsorptionAmount(entity.getAbsorptionHealth());
+                    else p.setAbsorptionAmount(0);
                     p.setFoodLevel(entity.getHunger());
                 }
             } catch (RefreshError err) {
