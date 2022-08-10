@@ -114,6 +114,20 @@ public class InvShareListener implements Listener {
                 list.add("0x46");
             }
             InventoryShare.plugin.getLogger().info("Took: " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
+
+            try {
+                final EnderChestEntity entity = ShareDB.init.getEnderChest(id);
+                InventoryShare.plugin.getLogger().info("EnderChestEntity");
+                if(entity != null) {
+                    InventoryShare.plugin.getLogger().info("Loaded");
+                    entity.forEach((slot, i) -> p.getEnderChest().setItem(slot, i));
+                }
+            } catch (RefreshError err) {
+                err.printStackTrace();
+                list.add("0x64");
+            }
+            InventoryShare.plugin.getLogger().info("Took: " + (System.currentTimeMillis() - start) + "ms");
 
             if(list.isEmpty()) {
                 p.sendMessage(chat("&a[ &fDATA &a] &e서버 동기화 성공!"));
@@ -135,6 +149,7 @@ public class InvShareListener implements Listener {
             ShareDB.init.saveExperience(p);
             ShareDB.init.saveHealth(p);
             ShareDB.init.saveInventory(p);
+            ShareDB.init.saveEnderChest(p);
             ShareDB.init.savePotion(p);
         });
     }

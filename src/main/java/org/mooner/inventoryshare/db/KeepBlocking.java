@@ -38,7 +38,7 @@ public class KeepBlocking {
                 runnable.run();
                 unregister();
                 task.cancel();
-            } else if (ShareDB.init.getAccess(id) >= 5) {
+            } else if (ShareDB.init.getAccess(id) >= ShareDB.init.getMaxConnection()) {
                 InventoryShare.plugin.getLogger().info("Indexing Skip");
                 ShareDB.init.setAccess(id, 0);
                 runnable.run();

@@ -22,10 +22,12 @@ public class ShareDB {
     private final HashMap<UUID, Long> key;
     private static final String dbPath = "../db/";
     private static final String CONNECTION = "jdbc:sqlite:" + dbPath + "player.db";
+    private final int maxConnection;
 
     public ShareDB() {
         key = new HashMap<>();
 
+        int connections = 0;
         new File(dbPath).mkdirs();
         File db = new File(dbPath, "player.db");
         if(!db.exists()) {
@@ -49,6 +51,7 @@ public class ShareDB {
         ) {
             s.execute();
             InventoryShare.plugin.getLogger().info("성공적으로 Player - ArmorDB 를 생성했습니다.");
+            connections++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -63,6 +66,7 @@ public class ShareDB {
         ) {
             s.execute();
             InventoryShare.plugin.getLogger().info("성공적으로 Player - ExperienceDB 를 생성했습니다.");
+            connections++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -77,6 +81,7 @@ public class ShareDB {
         ) {
             s.execute();
             InventoryShare.plugin.getLogger().info("성공적으로 Player - HealthDB 를 생성했습니다.");
+            connections++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -89,20 +94,20 @@ public class ShareDB {
         ) {
             s.execute();
             InventoryShare.plugin.getLogger().info("성공적으로 Player - InventoryDB 를 생성했습니다.");
+            connections++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
-                PreparedStatement s = c.prepareStatement(
-                        "CREATE TABLE IF NOT EXISTS Player (" +
-                                "id INTEGER NOT NULL UNIQUE," +
-                                "uuid TEXT NOT NULL UNIQUE," +
-                                "loaded INTEGER NOT NULL," +
-                                "PRIMARY KEY(id AUTOINCREMENT))")
+                PreparedStatement s = c.prepareStatement("CREATE TABLE IF NOT EXISTS EnderChest (" +
+                        "id INTEGER NOT NULL," +
+                        "slot INTEGER NOT NULL," +
+                        "data BLOB)")
         ) {
             s.execute();
-            InventoryShare.plugin.getLogger().info("성공적으로 Player - PlayerDB 를 생성했습니다.");
+            InventoryShare.plugin.getLogger().info("성공적으로 Player - EnderChestDB 를 생성했습니다.");
+            connections++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -118,9 +123,29 @@ public class ShareDB {
         ) {
             s.execute();
             InventoryShare.plugin.getLogger().info("성공적으로 Player - PotionEffectDB 를 생성했습니다.");
+            connections++;
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        maxConnection = connections;
+        try (
+                Connection c = DriverManager.getConnection(CONNECTION);
+                PreparedStatement s = c.prepareStatement(
+                        "CREATE TABLE IF NOT EXISTS Player (" +
+                                "id INTEGER NOT NULL UNIQUE," +
+                                "uuid TEXT NOT NULL UNIQUE," +
+                                "loaded INTEGER NOT NULL," +
+                                "PRIMARY KEY(id AUTOINCREMENT))")
+        ) {
+            s.execute();
+            InventoryShare.plugin.getLogger().info("성공적으로 Player - PlayerDB 를 생성했습니다.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int getMaxConnection() {
+        return maxConnection;
     }
 
     public long getKey(UUID uuid) {
@@ -397,6 +422,57 @@ public class ShareDB {
                 Connection c = DriverManager.getConnection(CONNECTION);
                 PreparedStatement s2 = c.prepareStatement("UPDATE Inventory SET data=? WHERE id=? and slot=?");
                 PreparedStatement s = c.prepareStatement("INSERT INTO Inventory VALUES(?, ?, ?)")
+        ) {
+            s2.setBytes(1, map);
+            s2.setLong(2, id);
+            s2.setInt(3, slot);
+            if(s2.executeUpdate() == 0) {
+                s.setLong(1, id);
+                s.setInt(2, slot);
+                s.setBytes(3, map);
+                s.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Nullable
+    public EnderChestEntity getEnderChest(UUID uuid) throws RefreshError {
+        return getEnderChest(getKey(uuid));
+    }
+
+    @Nullable
+    public EnderChestEntity getEnderChest(long id) throws RefreshError {
+        try (
+                Connection c = DriverManager.getConnection(CONNECTION);
+                PreparedStatement s = c.prepareStatement(
+                        "SELECT * FROM EnderChest WHERE id=" + id)
+        ) {
+            try (
+                    ResultSet r = s.executeQuery()
+            ) {
+                HashMap<Integer, ItemStack> map = new HashMap<>();
+                while(r.next()) map.put(r.getInt("slot"), ItemParser.itemFromSerial(r.getBytes("data")));
+                return map.isEmpty() ? null : new EnderChestEntity(map);
+            }
+        } catch (SQLException e) {
+            throw new RefreshError(e);
+        }
+    }
+
+    public void saveEnderChest(Player p) {
+        final long id = getKey(p.getUniqueId());
+        for (int i = 0; i < 27; i++) saveEndSlot(id, i, p.getEnderChest().getItem(i));
+        addAccess(id);
+    }
+
+    private void saveEndSlot(long id, int slot, ItemStack i) {
+        byte[] map = ItemParser.itemToSerial(i);
+        try (
+                Connection c = DriverManager.getConnection(CONNECTION);
+                PreparedStatement s2 = c.prepareStatement("UPDATE EnderChest SET data=? WHERE id=? and slot=?");
+                PreparedStatement s = c.prepareStatement("INSERT INTO EnderChest VALUES(?, ?, ?)")
         ) {
             s2.setBytes(1, map);
             s2.setLong(2, id);
