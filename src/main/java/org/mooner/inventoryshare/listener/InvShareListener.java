@@ -3,6 +3,7 @@ package org.mooner.inventoryshare.listener;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -89,7 +90,7 @@ public class InvShareListener implements Listener {
                 InventoryShare.plugin.getLogger().info("HealthEntity");
                 if(entity != null) {
                     InventoryShare.plugin.getLogger().info("Loaded");
-                    p.setHealth(entity.getHealth());
+                    p.setHealth(Math.min(entity.getHealth(), p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
                     if(potion != null && potion.hasAbsorption()) p.setAbsorptionAmount(entity.getAbsorptionHealth());
                     else p.setAbsorptionAmount(0);
                     p.setFoodLevel(entity.getHunger());
