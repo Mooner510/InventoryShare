@@ -32,7 +32,7 @@ public class KeepBlocking {
         Bukkit.getPluginManager().registerEvents(stopper = new Stopper(), InventoryShare.plugin);
         delayed = 0;
         task = Bukkit.getScheduler().runTaskTimer(InventoryShare.plugin, () -> {
-            if(delayed++ >= 30) {
+            if(delayed++ >= 10) {
                 InventoryShare.plugin.getLogger().info("Delayed Skip");
                 ShareDB.init.setAccess(id, 0);
                 runnable.run();
@@ -53,7 +53,7 @@ public class KeepBlocking {
     }
 
     public static boolean loc(Location loc1, Location loc2) {
-        return loc2 != null && loc1.getX() == loc2.getX() && loc1.getY() == loc2.getY() && loc1.getZ() == loc2.getZ();
+        return loc2 != null && loc1.getX() == loc2.getX() && loc1.getZ() == loc2.getZ();
     }
 
     private class Stopper implements Listener {
