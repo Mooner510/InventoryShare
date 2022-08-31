@@ -1,5 +1,6 @@
 package org.mooner.inventoryshare.db;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -488,12 +489,10 @@ public class ShareDB {
         }
     }
 
-    @Nullable
     public PotionEffectEntity getPotion(UUID uuid) throws RefreshError {
         return getPotion(getKey(uuid));
     }
 
-    @Nullable
     public PotionEffectEntity getPotion(long id) throws RefreshError {
         long time = System.currentTimeMillis();
         try (
@@ -513,7 +512,7 @@ public class ShareDB {
                             set.add(new PotionEffect(type, Math.toIntExact(l / 50L), r.getInt("level"), true, r.getBoolean("particle")));
                     }
                 }
-                return set.isEmpty() ? null : new PotionEffectEntity(set);
+                return set.isEmpty() ? new PotionEffectEntity() : new PotionEffectEntity(set);
             }
         } catch (SQLException e) {
             throw new RefreshError(e);
@@ -523,29 +522,34 @@ public class ShareDB {
     public void savePotion(Player p) {
         final long id = getKey(p.getUniqueId());
         final long time = System.currentTimeMillis();
+        clearEffect(id);
         for (PotionEffect effect : p.getActivePotionEffects()) saveEffect(id, effect, time);
         addAccess(id);
+    }
+
+    private void clearEffect(long id) {
+        try (
+                Connection c = DriverManager.getConnection(CONNECTION);
+                PreparedStatement s2 = c.prepareStatement("DELETE FROM PotionEffect WHERE id=?");
+        ) {
+            s2.setLong(1, id);
+            s2.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void saveEffect(long id, PotionEffect effect, long time) {
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
-                PreparedStatement s2 = c.prepareStatement("UPDATE PotionEffect SET level=?, time=?, particle=? WHERE id=? and type=?");
                 PreparedStatement s = c.prepareStatement("INSERT INTO PotionEffect VALUES(?, ?, ?, ?, ?)")
         ) {
-            s2.setInt(1, effect.getAmplifier());
-            s2.setLong(2, time + effect.getDuration() * 50L);
-            s2.setBoolean(3, effect.hasParticles());
-            s2.setLong(4, id);
-            s2.setString(5, effect.getType().getName());
-            if(s2.executeUpdate() == 0) {
-                s.setLong(1, id);
-                s.setString(2, effect.getType().getName());
-                s.setInt(3, effect.getAmplifier());
-                s.setLong(4, time + effect.getDuration() * 50L);
-                s.setBoolean(5, effect.hasParticles());
-                s.executeUpdate();
-            }
+            s.setLong(1, id);
+            s.setString(2, effect.getType().getName());
+            s.setInt(3, effect.getAmplifier());
+            s.setLong(4, time + effect.getDuration() * 50L);
+            s.setBoolean(5, effect.hasParticles());
+            s.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

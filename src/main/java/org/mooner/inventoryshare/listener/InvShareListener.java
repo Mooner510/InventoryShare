@@ -69,13 +69,11 @@ public class InvShareListener implements Listener {
             try {
                 PotionEffectEntity entity = ShareDB.init.getPotion(id);
                 InventoryShare.plugin.getLogger().info("PotionEffectEntity");
-                if(entity != null) {
-                    InventoryShare.plugin.getLogger().info("Loaded");
-                    Bukkit.getScheduler().runTask(InventoryShare.plugin, () -> {
-                        for (PotionEffect effect : p.getActivePotionEffects()) p.removePotionEffect(effect.getType());
-                        entity.forEach(p::addPotionEffect);
-                    });
-                }
+                InventoryShare.plugin.getLogger().info("Loaded");
+                Bukkit.getScheduler().runTask(InventoryShare.plugin, () -> {
+                    for (PotionEffect effect : p.getActivePotionEffects()) p.removePotionEffect(effect.getType());
+                    entity.forEach(p::addPotionEffect);
+                });
                 potion = entity;
             } catch (RefreshError err) {
                 err.printStackTrace();
