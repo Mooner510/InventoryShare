@@ -265,12 +265,16 @@ public class ShareDB {
     }
 
     public void saveArmor(Player p) {
-        final long id = getKey(p.getUniqueId());
-        final byte[] h = ItemParser.itemToSerial(p.getInventory().getHelmet());
-        final byte[] cp = ItemParser.itemToSerial(p.getInventory().getChestplate());
-        final byte[] leg = ItemParser.itemToSerial(p.getInventory().getLeggings());
-        final byte[] b = ItemParser.itemToSerial(p.getInventory().getBoots());
-        final byte[] off = ItemParser.itemToSerial(p.getInventory().getItemInOffHand());
+        saveArmor(getKey(p.getUniqueId()),
+                ItemParser.itemToSerial(p.getInventory().getHelmet()),
+                ItemParser.itemToSerial(p.getInventory().getChestplate()),
+                ItemParser.itemToSerial(p.getInventory().getLeggings()),
+                ItemParser.itemToSerial(p.getInventory().getBoots()),
+                ItemParser.itemToSerial(p.getInventory().getItemInOffHand())
+        );
+    }
+
+    private void saveArmor(long id, byte[] h, byte[] cp, byte[] leg, byte[] b, byte[] off) {
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
                 PreparedStatement s2 = c.prepareStatement("UPDATE Armor SET helmet=?, chestplate=?, leggings=?, boots=?, shield=? WHERE id=?");
@@ -293,6 +297,8 @@ public class ShareDB {
             }
             addAccess(id);
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> saveArmor(id, h, cp, leg, b, off), 5);
             e.printStackTrace();
         }
     }
@@ -321,9 +327,10 @@ public class ShareDB {
     }
 
     public void saveExperience(Player p) {
-        final long id = getKey(p.getUniqueId());
-        final int level = p.getLevel();
-        final float exp = p.getExp();
+        saveExperience(getKey(p.getUniqueId()), p.getLevel(), p.getExp());
+    }
+
+    private void saveExperience(long id, int level, float exp) {
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
                 PreparedStatement s = c.prepareStatement("INSERT INTO Experience VALUES(?, ?, ?) ON CONFLICT(id) DO UPDATE SET level=?, exp=?")
@@ -336,6 +343,8 @@ public class ShareDB {
             s.executeUpdate();
             addAccess(id);
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> saveExperience(id, level, exp), 5);
             e.printStackTrace();
         }
     }
@@ -365,10 +374,10 @@ public class ShareDB {
     }
 
     public void saveHealth(Player p) {
-        final long id = getKey(p.getUniqueId());
-        final double hp = p.getHealth();
-        final double aHp = p.getExp();
-        final int food = p.getFoodLevel();
+        saveHealth(getKey(p.getUniqueId()), p.getHealth(), p.getAbsorptionAmount(), p.getFoodLevel());
+    }
+
+    private void saveHealth(long id, double hp, double aHp, int food) {
         try (
                 Connection c = DriverManager.getConnection(CONNECTION);
                 PreparedStatement s = c.prepareStatement("INSERT INTO Health VALUES(?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET health=?, aHealth=?, hunger=?")
@@ -383,6 +392,8 @@ public class ShareDB {
             s.executeUpdate();
             addAccess(id);
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> saveHealth(id, hp, aHp, food), 5);
             e.printStackTrace();
         }
     }
@@ -413,7 +424,12 @@ public class ShareDB {
 
     public void saveInventory(Player p) {
         final long id = getKey(p.getUniqueId());
-        for (int i = 0; i < 36; i++) saveSlot(id, i, p.getInventory().getItem(i));
+        HashMap<Integer, ItemStack> stacks = new HashMap<>(36);
+        for (int i = 0; i < 36; i++) {
+            final ItemStack item = p.getInventory().getItem(i);
+            stacks.put(i, item == null ? null : item.clone());
+        }
+        for (int i = 0; i < 36; i++) saveSlot(id, i, stacks.get(i));
         addAccess(id);
     }
 
@@ -434,6 +450,8 @@ public class ShareDB {
                 s.executeUpdate();
             }
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> saveSlot(id, slot, i), 5);
             e.printStackTrace();
         }
     }
@@ -464,7 +482,12 @@ public class ShareDB {
 
     public void saveEnderChest(Player p) {
         final long id = getKey(p.getUniqueId());
-        for (int i = 0; i < 27; i++) saveEndSlot(id, i, p.getEnderChest().getItem(i));
+        HashMap<Integer, ItemStack> stacks = new HashMap<>(27);
+        for (int i = 0; i < 27; i++) {
+            final ItemStack item = p.getEnderChest().getItem(i);
+            stacks.put(i, item == null ? null : item.clone());
+        }
+        for (int i = 0; i < 27; i++) saveEndSlot(id, i, stacks.get(i));
         addAccess(id);
     }
 
@@ -485,6 +508,8 @@ public class ShareDB {
                 s.executeUpdate();
             }
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> saveEndSlot(id, slot, i), 5);
             e.printStackTrace();
         }
     }
@@ -535,6 +560,8 @@ public class ShareDB {
             s2.setLong(1, id);
             s2.executeUpdate();
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> clearEffect(id), 5);
             e.printStackTrace();
         }
     }
@@ -551,6 +578,8 @@ public class ShareDB {
             s.setBoolean(5, effect.hasParticles());
             s.executeUpdate();
         } catch (SQLException e) {
+            if(e.getErrorCode() == 5 || e.getErrorCode() == 6)
+                Bukkit.getScheduler().runTaskLater(InventoryShare.plugin, () -> saveEffect(id, effect, time), 5);
             e.printStackTrace();
         }
     }

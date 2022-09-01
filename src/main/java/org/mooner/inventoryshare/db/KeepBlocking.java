@@ -32,7 +32,7 @@ public class KeepBlocking {
         Bukkit.getPluginManager().registerEvents(stopper = new Stopper(), InventoryShare.plugin);
         delayed = 0;
         task = Bukkit.getScheduler().runTaskTimer(InventoryShare.plugin, () -> {
-            if(delayed++ >= 10) {
+            if(delayed++ >= 100) {
                 InventoryShare.plugin.getLogger().info("Delayed Skip");
                 ShareDB.init.setAccess(id, 0);
                 runnable.run();
